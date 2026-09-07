@@ -8,13 +8,27 @@ The drawing tool as a reusable component: `setupDrawingTool` takes a registry of
 <div class="jp">再利用可能なコンポーネントとしての描画ツールです。`setupDrawingTool`はツールのレジストリを受け取り、その周りに楽器全体、つまりキャンバス、ダイヤル、設定パネル、プレビュー、リプレイ、録画、ガイド画像を組み立てます。このサイトのすべての描画面は、このコンポーネントにそれぞれ別のレジストリを渡したものです。</div>
 
 <div class="page-note">
-<p><code>public/lib/demo/drawingTool.js</code>, <code>public/lib/demo/toolRegistry.js</code>, <code>public/lib/demo/markBuilder.js</code></p>
+<p><code>public/lib/demo/drawingTool.js</code>, <code>public/lib/demo/instrument.js</code>, <code>public/lib/demo/toolRegistry.js</code>, <code>public/lib/demo/markBuilder.js</code></p>
 </div>
+
+## DrawingInstrument
+
+`DrawingInstrument` is the instrument's state without its interface: the current tool and everything a mark needs (`state`), the palette configuration (`paletteCfg`, a key hue, a theme, and a seed), and the trail of rolled tools. `setupDrawingTool` builds its controls over one; the host contract engine drives one from parameter values. Its methods change the state only, and whoever owns the interface redraws afterwards.
+<div class="jp">`DrawingInstrument`は、インターフェースを持たない楽器の状態です。現在のツールと印に必要なすべて（`state`）、パレットの設定（`paletteCfg`、基準の色相、テーマ、シード）、そしてロールされたツールの列を持ちます。`setupDrawingTool`はその上にコントロールを組み立て、ホスト契約のエンジンはパラメータ値からそれを動かします。メソッドは状態だけを変え、その後の再描画はインターフェースを持つ側が行います。</div>
+
+- **regenPalette / rerollPalette / paletteStep(steps):** the palette from its config, its jitter rerolled, or its key hue moved by about ten degrees per step with a fresh theme.<br /><span class="jp">**regenPalette / rerollPalette / paletteStep(steps)：**設定からのパレット、その揺らぎの引き直し、あるいは1ステップ約10度の基準色相の移動と新しいテーマ。</span>
+- **stepTrail(steps) / selectTool(index):** a walk along the trail, or a tool by registry index with the values it was last used with.<br /><span class="jp">**stepTrail(steps) / selectTool(index)：**列に沿った移動、あるいはレジストリの番号によるツールの選択（最後に使った値を保ちます）。</span>
+- **release(autoRandom):** the reroll on every pen release; auto mode also rolls the tool.<br /><span class="jp">**release(autoRandom)：**ペンを離すたびの引き直し。autoモードではツールもロールします。</span>
+- **snapshot():** a record without its points and seed.<br /><span class="jp">**snapshot()：**点とシードを除いた記録。</span>
+- **clearCanvas({ cycle, board, stage, recorder, marks, onClear }):** a fresh gradient background and `marks` scattered marks from rolled tools, all through the cycle.<br /><span class="jp">**clearCanvas({ cycle, board, stage, recorder, marks, onClear })：**新しいグラデーションの背景と、ロールしたツールによる`marks`個の散らした印。すべてサイクルを通します。</span>
+
+`DialStepper` turns a dial's absolute value into steps: the range is quantized into buckets of six, and crossing into a new bucket yields the difference.
+<div class="jp">`DialStepper`はダイヤルの絶対値をステップに変えます。範囲は6単位のバケットに量子化され、新しいバケットに入ると差分が返ります。</div>
 
 ## setupDrawingTool
 
-`setupDrawingTool({ registry, root, square })` injects its interface into `root` (the document body by default) and wires everything up. `registry` is the list of tools; `square` adds the square embedded layout for pages that reserve one. The component owns its state: the current tool, its parameter values, the width, the pressure sensitivity, and the palette (a `ThemedPaletteMaker` configuration: a key hue, a theme, and a seed).
-<div class="jp">`setupDrawingTool({ registry, root, square })`は、インターフェースを`root`（既定ではdocumentのbody）に注入し、すべてを配線します。`registry`はツールのリストです。`square`は、正方形の埋め込みレイアウトを確保しているページ向けに、そのレイアウトを追加します。コンポーネントは状態を自分で持ちます。現在のツール、そのパラメータ値、幅、筆圧の感度、そしてパレット（`ThemedPaletteMaker`の設定、すなわち基準の色相、テーマ、シード）です。</div>
+`setupDrawingTool({ registry, root, square })` injects its interface into `root` (the document body by default) and wires everything up. `registry` is the list of tools; `square` adds the square embedded layout for pages that reserve one. The state lives in a `DrawingInstrument`: the current tool, its parameter values, the width, the pressure sensitivity, and the palette (a `ThemedPaletteMaker` configuration: a key hue, a theme, and a seed).
+<div class="jp">`setupDrawingTool({ registry, root, square })`は、インターフェースを`root`（既定ではdocumentのbody）に注入し、すべてを配線します。`registry`はツールのリストです。`square`は、正方形の埋め込みレイアウトを確保しているページ向けに、そのレイアウトを追加します。状態は`DrawingInstrument`が持ちます。現在のツール、そのパラメータ値、幅、筆圧の感度、そしてパレット（`ThemedPaletteMaker`の設定、すなわち基準の色相、テーマ、シード）です。</div>
 
 The interface: a settings panel on the right, open by default, holding every control but the two floating dials. Each hue dial step moves the palette's key hue by about ten degrees (randomized per step) and rolls a fresh theme; the tool dial walks a trail of rolled tools, ten remembered on each side of the current one. Changing the tool, and every release of the pen, rerolls the palette's jitter under the same hue and theme, so the key color holds while the rest of the palette moves. Both dials listen to MIDI controls 16 and 17. The interface fades while the pen is down.
 <div class="jp">インターフェースの右側には、既定で開いた設定パネルがあり、浮かんでいる2つのダイヤル以外のすべてのコントロールをそこに収めます。色相ダイヤルは1ステップごとに、パレットの基準の色相を約10度（ステップごとにランダム化されます）動かし、新しいテーマをロールします。ツールダイヤルは、現在のツールの両側に10個ずつ記憶された、ロールされたツールの列をたどります。ツールを変えたとき、そしてペンを離すたびに、同じ色相とテーマのままパレットの揺らぎが引き直されます。そのため基準の色は保たれ、残りの色が動きます。どちらのダイヤルもMIDIコントロールの16と17に反応します。ペンを下ろしている間は、インターフェースが薄くなります。</div>

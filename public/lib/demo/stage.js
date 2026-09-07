@@ -86,102 +86,123 @@ export class StrokeStage {
         });
     }
 
+    /** Schedules one render on the next frame; repeated calls coalesce. */
     draw() {
         if (this._pending) return;
         this._pending = true;
         requestAnimationFrame(() => {
             this._pending = false;
-            this.syncScreenUniforms(this.buffer.scene);
-            this.buffer.scene.traverse(child => {
-                if (!child.isMesh) return;
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                // A wire-only mesh is an overlay: always wireframe, visible only
-                // while the flag is on.
-                if (child.userData.wireOnly) {
-                    child.visible = this.wireframe;
-                    materials.forEach(m => { if (m) m.wireframe = true; });
-                    return;
-                }
-                if (!(child.userData.stats || child.userData.wire)) return;
-                materials.forEach(m => { if (m) m.wireframe = this.wireframe; });
-            });
-            this._preRenders.forEach(fn => fn(
-                this.renderer, this.buffer.camera,
-                this.viewport.pixelWidth, this.viewport.pixelHeight
-            ));
+            this._render();
+        });
+    }
 
-            // Three phases: the scene without layered marks and overlays, then
-            // each `coverageLayer` mark through the shared layer (so its
-            // self-overlaps keep single coverage), then the overlays
-            // (`userData.overlay`) on top.
-            const layered = [];
-            const overlays = [];
+    /** Renders immediately, for reading the canvas back in the same task. */
+    drawNow() {
+        this._pending = false;
+        this._render();
+    }
+
+    /**
+     * Frames the given world half-extents (`{ width, height }`) so they stay fully
+     * visible, dropping the fixed scale. Resize handlers run so the board and the
+     * demos refit.
+     */
+    setFit(fit) {
+        this.buffer.setFit(fit);
+        this._resizeHandlers.forEach(fn => fn(this.viewport.pixelWidth, this.viewport.pixelHeight));
+        this.draw();
+    }
+
+    _render() {
+        this.syncScreenUniforms(this.buffer.scene);
+        this.buffer.scene.traverse(child => {
+            if (!child.isMesh) return;
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            // A wire-only mesh is an overlay: always wireframe, visible only
+            // while the flag is on.
+            if (child.userData.wireOnly) {
+                child.visible = this.wireframe;
+                materials.forEach(m => { if (m) m.wireframe = true; });
+                return;
+            }
+            if (!(child.userData.stats || child.userData.wire)) return;
+            materials.forEach(m => { if (m) m.wireframe = this.wireframe; });
+        });
+        this._preRenders.forEach(fn => fn(
+            this.renderer, this.buffer.camera,
+            this.viewport.pixelWidth, this.viewport.pixelHeight
+        ));
+
+        // Three phases: the scene without layered marks and overlays, then
+        // each `coverageLayer` mark through the shared layer (so its
+        // self-overlaps keep single coverage), then the overlays
+        // (`userData.overlay`) on top.
+        const layered = [];
+        const overlays = [];
+        this.buffer.scene.children.forEach(child => {
+            if (!child.visible) return;
+            if (child.userData.overlay) overlays.push(child);
+            else if (child.isMesh && child.userData.coverageLayer && !child.userData.wireOnly) {
+                layered.push(child);
+            } else {
+                child.traverse(c => {
+                    if (c.visible && c.isMesh && c.userData.coverageLayer && !c.userData.wireOnly) {
+                        layered.push(c);
+                    }
+                });
+            }
+        });
+
+        layered.forEach(m => { m.visible = false; });
+        overlays.forEach(o => { o.visible = false; });
+        this.buffer.render(this.renderer);
+        layered.forEach(m => { m.visible = true; });
+        overlays.forEach(o => { o.visible = true; });
+
+        if (layered.length) {
+            layered.sort((a, b) => a.getWorldPosition(_wp).z - b.getWorldPosition(_wq).z
+                || 0);
+            layered.forEach(mesh => {
+                this.coverage.draw(this.renderer, this.buffer.camera, mesh, this.buffer.target);
+            });
+        }
+
+        if (overlays.length) {
+            // Overlays honor the coverage flag too, so a flagged mark (the
+            // tool preview, say) looks the same here as in the main phases.
+            const overlayLayered = [];
+            overlays.forEach(o => {
+                o.traverse(c => {
+                    if (c.visible && c.isMesh && c.userData.coverageLayer && !c.userData.wireOnly) {
+                        overlayLayered.push(c);
+                    }
+                });
+            });
+            const hidden = [];
             this.buffer.scene.children.forEach(child => {
-                if (!child.visible) return;
-                if (child.userData.overlay) overlays.push(child);
-                else if (child.isMesh && child.userData.coverageLayer && !child.userData.wireOnly) {
-                    layered.push(child);
-                } else {
-                    child.traverse(c => {
-                        if (c.visible && c.isMesh && c.userData.coverageLayer && !c.userData.wireOnly) {
-                            layered.push(c);
-                        }
-                    });
+                if (child.visible && !overlays.includes(child)) {
+                    child.visible = false;
+                    hidden.push(child);
                 }
             });
-
-            layered.forEach(m => { m.visible = false; });
-            overlays.forEach(o => { o.visible = false; });
-            this.buffer.render(this.renderer);
-            layered.forEach(m => { m.visible = true; });
-            overlays.forEach(o => { o.visible = true; });
-
-            if (layered.length) {
-                layered.sort((a, b) => a.getWorldPosition(_wp).z - b.getWorldPosition(_wq).z
-                    || 0);
-                layered.forEach(mesh => {
+            overlayLayered.forEach(m => { m.visible = false; });
+            const previousTarget = this.renderer.getRenderTarget();
+            this.renderer.setRenderTarget(this.buffer.target);
+            this.renderer.render(this.buffer.scene, this.buffer.camera);
+            this.renderer.setRenderTarget(previousTarget);
+            overlayLayered.forEach(m => { m.visible = true; });
+            hidden.forEach(child => { child.visible = true; });
+            if (overlayLayered.length) {
+                overlayLayered.sort((a, b) =>
+                    a.getWorldPosition(_wp).z - b.getWorldPosition(_wq).z || 0);
+                overlayLayered.forEach(mesh => {
                     this.coverage.draw(this.renderer, this.buffer.camera, mesh, this.buffer.target);
                 });
             }
+        }
 
-            if (overlays.length) {
-                // Overlays honor the coverage flag too, so a flagged mark (the
-                // tool preview, say) looks the same here as in the main phases.
-                const overlayLayered = [];
-                overlays.forEach(o => {
-                    o.traverse(c => {
-                        if (c.visible && c.isMesh && c.userData.coverageLayer && !c.userData.wireOnly) {
-                            overlayLayered.push(c);
-                        }
-                    });
-                });
-                const hidden = [];
-                this.buffer.scene.children.forEach(child => {
-                    if (child.visible && !overlays.includes(child)) {
-                        child.visible = false;
-                        hidden.push(child);
-                    }
-                });
-                overlayLayered.forEach(m => { m.visible = false; });
-                const previousTarget = this.renderer.getRenderTarget();
-                this.renderer.setRenderTarget(this.buffer.target);
-                this.renderer.render(this.buffer.scene, this.buffer.camera);
-                this.renderer.setRenderTarget(previousTarget);
-                overlayLayered.forEach(m => { m.visible = true; });
-                hidden.forEach(child => { child.visible = true; });
-                if (overlayLayered.length) {
-                    overlayLayered.sort((a, b) =>
-                        a.getWorldPosition(_wp).z - b.getWorldPosition(_wq).z || 0);
-                    overlayLayered.forEach(mesh => {
-                        this.coverage.draw(this.renderer, this.buffer.camera, mesh, this.buffer.target);
-                    });
-                }
-            }
-
-            this.buffer.present(this.renderer);
-        });
+        this.buffer.present(this.renderer);
     }
 }
-
 const _wp = new THREE.Vector3();
 const _wq = new THREE.Vector3();

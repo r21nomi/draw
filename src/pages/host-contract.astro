@@ -1,0 +1,29 @@
+---
+import PageLayout from '../layouts/PageLayout.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<PageLayout title="Host Contract Demo" slug="host-contract">
+  <div class="monologue">
+    The same marks, on three surfaces
+  </div>
+
+  <div class="prose">
+    <p>The library as the host application sees it: a drawing engine with no interface of its own, a live view that mirrors it from serialized events, and a player that replays the exported recording. The three surfaces here are the three interfaces of the Host Contract; the page only wires them together.</p>
+    <div class="jp">ホストアプリケーションから見たライブラリです。インターフェースを持たない描画エンジン、直列化されたイベントからそれを映すライブビュー、そして書き出された記録を再生するプレイヤー。ここにある3つの面はHost Contractの3つのインターフェースで、このページはそれらを繋いでいるだけです。</div>
+  </div>
+
+  <section class="demo-section" id="demo">
+    <div class="demo-header">
+      <h2>Engine, live view, and player</h2>
+      <a href={`${base}/demos/host-contract/index.html`} target="_blank" rel="noopener">open full size ↗</a>
+    </div>
+    <div class="demo-embed">
+      <iframe src={`${base}/demos/host-contract/index.html?embedded`} title="Host contract" scrolling="no"></iframe>
+    </div>
+    <div class="prose">
+      <p>Draw on the large surface. The Hue and Tool sliders stand in for the installation's dials. Finish exports the image and the recording and plays it back on the bottom right.</p>
+      <div class="jp">大きい面に描いてください。HueとToolのスライダーは、インスタレーションのダイヤルの代わりです。Finishは画像と記録を書き出し、右下で再生します。</div>
+    </div>
+  </section>
+</PageLayout>

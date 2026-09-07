@@ -8,7 +8,7 @@ Recording and playback for drawings. A drawing's log is data, not raster: the st
 <div class="jp">描画の記録と再生です。描画のログはラスタではなくデータです。開始時の背景と、確定した印ごとの記録からなります。`StrokeRecorder`は描いている間にログを集めます。`StrokePlayer`は独立したエンジンで、ログを受け取って描画サイクルを通して再生し、再生をビデオに録画し、ログをファイルへ直列化し、ファイルから読み戻します。</div>
 
 <div class="page-note">
-<p><code>public/lib/demo/strokeRecorder.js</code>, <code>public/lib/demo/strokePlayer.js</code></p>
+<p><code>public/lib/demo/strokeRecorder.js</code>, <code>public/lib/demo/strokePlayer.js</code>, <code>public/lib/demo/drawingLog.js</code></p>
 </div>
 
 ## The record
@@ -34,7 +34,7 @@ The engine owns no interface. It reaches the surface through three callbacks giv
 
 ## Serialization
 
-`serializeDrawing({ background, records })` returns the log as JSON, under `{ version: 1, background, records }`. `downloadDrawingZip(log, filename)` saves it as a zip holding one JSON file, and `readDrawingZip(file)` reads it back from a zip or a bare JSON file. The zip codec loads on demand, so pages that never save or load pay nothing for it.
-<div class="jp">`serializeDrawing({ background, records })`は、ログを`{ version: 1, background, records }`の形のJSONとして返します。`downloadDrawingZip(log, filename)`はそれをJSONファイルをひとつ持つzipとして保存し、`readDrawingZip(file)`はzipか素のJSONファイルから読み戻します。zipのコーデックは必要になったときに読み込まれるため、保存も読み込みもしないページには何のコストもかかりません。</div>
+`serializeDrawing({ background, records, view })` returns the log as JSON, under `{ version: 1, view, background, records }`; `view` is the world half-extents the drawing was made at (`{ extentX, extentY }`), omitted when unknown, and `parseDrawing` reads a log back. `downloadDrawingZip(log, filename)` saves it as a zip holding one JSON file, and `readDrawingZip(file)` reads it back from a zip or a bare JSON file. The zip codec loads on demand, so pages that never save or load pay nothing for it.
+<div class="jp">`serializeDrawing({ background, records, view })`は、ログを`{ version: 1, view, background, records }`の形のJSONとして返します。`view`は描かれたときのワールドの半径（`{ extentX, extentY }`）で、不明なら省かれます。`parseDrawing`はログを読み戻します。`downloadDrawingZip(log, filename)`はそれをJSONファイルをひとつ持つzipとして保存し、`readDrawingZip(file)`はzipか素のJSONファイルから読み戻します。zipのコーデックは必要になったときに読み込まれるため、保存も読み込みもしないページには何のコストもかかりません。</div>
 
 </div>

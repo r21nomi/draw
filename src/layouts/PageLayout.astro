@@ -99,6 +99,7 @@ const navItems: NavItem[] = [
   },
   { label: 'Drawing Tool Demo', href: `${base}/drawing-tool`, slug: 'drawing-tool' },
   { label: 'Player', href: `${base}/player`, slug: 'player' },
+  { label: 'Host Contract Demo', href: `${base}/host-contract`, slug: 'host-contract' },
   { label: 'Documentation', href: `${base}/documentation`, slug: 'documentation',
     children: [
       { label: 'Stroke Definition', href: `${base}/documentation/stroke-definition`, slug: 'documentation/stroke-definition',
@@ -172,6 +173,14 @@ const navItems: NavItem[] = [
           { label: 'Serialization',  href: '#serialization' },
         ]
       },
+      { label: 'Host Contract', href: `${base}/documentation/host-contract`, slug: 'documentation/host-contract',
+        subLinks: [
+          { label: 'Common features',      href: '#common-features' },
+          { label: 'ContractDrawingEngine', href: '#contractdrawingengine' },
+          { label: 'Live events',          href: '#live-events' },
+          { label: 'ContractLiveView',     href: '#contractliveview' },
+          { label: 'ContractPlayer',       href: '#contractplayer' },
+        ] },
       { label: 'Writing Style', href: `${base}/documentation/writing-style`, slug: 'documentation/writing-style',
         subLinks: [
           { label: 'Punctuation', href: '#punctuation' },

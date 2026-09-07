@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Host contract — engine, live view, and player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;700&family=Google+Sans+Code:wght@400&display=swap" rel="stylesheet" />
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js"}}</script>
+  <link rel="stylesheet" href="../../styles/demo-ui.css" />
+  <style>
+    /* Three surfaces: the engine on the left, the live mirror and the player stacked on the right. */
+    .host-stage { flex: 1 1 auto; display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: 1fr 1fr; gap: 8px; min-width: 0; padding: 8px; }
+    .host-stage .engine { grid-row: 1 / 3; }
+    .host-surface { position: relative; min-width: 0; min-height: 0; background: #ddd; }
+    .host-surface .host-caption { position: absolute; left: 8px; top: 6px; font-size: 11px; color: #444; z-index: 1; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div class="demo-layout">
+    <div class="host-stage">
+      <div class="host-surface engine" id="engine"><span class="host-caption">DrawingEngine</span></div>
+      <div class="host-surface" id="live"><span class="host-caption">DrawingLiveView (JSON round trip)</span></div>
+      <div class="host-surface" id="player"><span class="host-caption">DrawingPlayer</span></div>
+    </div>
+
+    <div class="dp-panel">
+      <div class="dp-hd"><span class="dp-title">Host contract</span></div>
+      <div class="dp-note">Draw on the left. Every live event is serialized to JSON and applied to the mirror. Finish exports the image and the recording, then plays the recording.</div>
+      <div class="dp-sub-label">Parameters</div>
+      <div class="dp-row"><span class="dp-label">Hue</span><input id="hue" class="dp-range" type="range" min="0" max="1" step="0.01" value="0.4" /></div>
+      <div class="dp-row"><span class="dp-label">Tool</span><input id="tool" class="dp-range" type="range" min="0" max="1" step="0.01" value="0.38" /></div>
+      <div class="dp-btn-row">
+        <button id="clear" class="dp-btn secondary">Clear</button>
+        <button id="finish" class="dp-btn secondary">Finish</button>
+      </div>
+      <div class="dp-sub-label">Player</div>
+      <div class="dp-btn-row">
+        <button id="play" class="dp-btn secondary" disabled>Play</button>
+        <button id="pause" class="dp-btn secondary" disabled>Pause</button>
+      </div>
+      <div class="dp-row"><span class="dp-label">Seek</span><input id="seek" class="dp-range" type="range" min="0" max="1" step="0.001" value="0" disabled /></div>
+      <a id="download-image" class="link" hidden>artwork.png</a>
+      <a id="download-recording" class="link" hidden>recording.json</a>
+      <pre id="log" class="log" style="max-height: 160px; overflow: auto; font-size: 11px;"></pre>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

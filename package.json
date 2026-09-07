@@ -1,11 +1,34 @@
 {
-  "name": "draw",
+  "name": "@r21nomi/draw",
+  "version": "0.1.0",
+  "description": "A drawing library on Three.js, and the host contract implementation for myaf2026-elililly-art-web.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/r21nomi/draw.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
   "type": "module",
-  "version": "0.0.1",
+  "files": [
+    "public/lib"
+  ],
+  "exports": {
+    ".": {
+      "types": "./public/lib/contract/index.d.ts",
+      "import": "./public/lib/contract/index.js"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check": "node --check public/lib/contract/index.js"
+  },
+  "peerDependencies": {
+    "three": "^0.169.0"
   },
   "dependencies": {
     "@astrojs/mdx": "^3.1.9",
