@@ -1,6 +1,6 @@
 {
   "name": "@r21nomi/draw",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A drawing library on Three.js, and the host contract implementation for myaf2026-elililly-art-web.",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
   "peerDependencies": {
     "three": "^0.169.0"
   },
-  "dependencies": {
+  "devDependencies": {
     "@astrojs/mdx": "^3.1.9",
     "astro": "^4.15.0"
   }
