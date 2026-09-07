@@ -88,6 +88,7 @@ src/content/pages/
     stroke-definition.md               one page per class or class group
     renderers.md
     palette.md  path-effects.md  curves.md
+    drawing-tool.md  player.md  host-contract.md
     writing-style.md                   how every explanation on this site is written
 src/pages/
   palette-maker.astro                  demo/log pages, written as .astro for embeds
@@ -97,6 +98,7 @@ src/pages/
   coverage-layer.astro                  explains the single-coverage buffer live
   drawing-tool.astro                    the combined instrument demo
   player.astro                          plays back a downloaded drawing log
+  host-contract.astro                   the engine, live view, and player as the host sees them
 public/lib/                            library code
   StrokeDef.js  Palette.js  ThemedPaletteMaker.js  color.js  CanvasBuffer.js
   random.js  pathEffects.js
@@ -125,7 +127,9 @@ public/lib/                            library code
                 drawingBoard.js  drawCycle.js  blobShowcase.js
                 pressure.js  testBackground.js  midi.js  dial.js  latch.js
                 strokeRecorder.js  toolRegistry.js  drawingTool.js
-                markBuilder.js  strokePlayer.js
+                markBuilder.js  strokePlayer.js  drawingLog.js
+                instrument.js                 the instrument's state without its
+                                              interface (DrawingInstrument, DialStepper)
                                        shared demo support, still library code
                                        drawingTool.js is the reusable instrument:
                                        it takes any tool registry and builds the
@@ -133,6 +137,11 @@ public/lib/                            library code
                                        the drawing tool demo are thin harnesses
                                        over it, with toolRegistry.js as the master
                                        tool catalog
+  contract/     index.js  index.d.ts          the host contract for myaf2026-elililly-art-web:
+                ContractDrawingEngine.js  ContractLiveView.js  ContractPlayer.js
+                surface.js  liveEvents.js  recording.js
+                                              published to GitHub Packages as @r21nomi/draw
+                                              (package.json exports; three is a peer dependency)
 public/demos/<name>/                   index.html + main.js per demo
 src/pages/experimental/<name>.astro    experimental pages, local only
 public/demos/experimental/<name>/      demos for experimental pages, local only
@@ -214,6 +223,15 @@ add it to the writing-style page, and apply it from then on.
 - The presented frame flips world y, so a light that should read as shining from the
   top of the screen has negative world y. Every lit shader follows this; reflection
   horizons sample -r.y for the sky side.
+
+## Package
+
+`package.json` doubles as the npm manifest: `exports` points at `public/lib/contract/`,
+`files` ships `public/lib`, and a `v*` tag publishes to GitHub Packages through
+`.github/workflows/publish.yml`. Library code must import `three` by its bare
+specifier only (the demos map it to a CDN, a host resolves it from node_modules), and
+must not touch `document` or `window` at module load, since the host imports it during
+server rendering.
 
 ## Git
 

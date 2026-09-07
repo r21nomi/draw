@@ -117,6 +117,17 @@ export class CanvasBuffer {
         this.camera.updateProjectionMatrix();
     }
 
+    /**
+     * Switches to `fit` framing: the given half-extents stay fully visible at any
+     * size, and the fixed scale is dropped. A mirror of another surface uses it
+     * to frame that surface's world rectangle.
+     */
+    setFit(fit) {
+        this.fit = fit;
+        this.ppu = null;
+        this._frame();
+    }
+
     add(object) { this.scene.add(object); return object; }
 
     remove(object) { this.scene.remove(object); return object; }

@@ -1,4 +1,7 @@
 import { replayRecords } from './strokeRecorder.js';
+import { serializeDrawing } from './drawingLog.js';
+
+export { serializeDrawing };
 
 const FFLATE = 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js';
 
@@ -95,16 +98,11 @@ export class StrokePlayer {
     }
 }
 
-/** A drawing's log as JSON: the starting background and every record. */
-export function serializeDrawing({ background, records }) {
-    return JSON.stringify({ version: 1, background, records });
-}
-
 /** Saves a drawing's log as a zip holding one JSON file. */
-export async function downloadDrawingZip({ background, records }, filename = 'drawing') {
+export async function downloadDrawingZip({ background, records, view = null }, filename = 'drawing') {
     const { zipSync, strToU8 } = await import(FFLATE);
     const bytes = zipSync(
-        { [`${filename}.json`]: strToU8(serializeDrawing({ background, records })) },
+        { [`${filename}.json`]: strToU8(serializeDrawing({ background, records, view })) },
         { level: 6 }
     );
     downloadBlob(new Blob([bytes], { type: 'application/zip' }), `${filename}.zip`);

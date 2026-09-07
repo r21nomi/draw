@@ -26,9 +26,12 @@ import { DrawInput } from './drawInput.js';
  * of a gesture's pieces have committed. `split` sets the turn threshold and
  * measurement window ({ angle, span }), or `false` to draw unsplit.
  * `pointerTrace` shows or hides the pointer's own line; the returned
- * `setPointerTrace` changes it later.
+ * `setPointerTrace` changes it later. `onFeed(points, done, seed)` fires at the
+ * start of every feed with the gesture's seed, so a mirror on another machine
+ * can rebuild the same marks; the returned `setSeed` aligns the gesture seed
+ * with a source, and `seed` reads it.
  */
-export function setupDrawCycle({ stage, board, canvas, build, minDistance, onCommit, onRelease,
+export function setupDrawCycle({ stage, board, canvas, build, minDistance, onCommit, onRelease, onFeed,
     split = { angle: Math.PI * 0.55, span: 0.05 }, pointerTrace = true }) {
     let seed = 1;
 
@@ -141,6 +144,7 @@ export function setupDrawCycle({ stage, board, canvas, build, minDistance, onCom
     }
 
     function feed(points, done) {
+        onFeed?.(points, done, seed);
         disposeGhost();
         disposeLive();
         live = buildFromPoints(points);
@@ -162,5 +166,9 @@ export function setupDrawCycle({ stage, board, canvas, build, minDistance, onCom
 
     const input = new DrawInput(canvas, stage, { minDistance, onChange: feed });
 
-    return { disposeGhost, input, feed, setPointerTrace };
+    return {
+        disposeGhost, input, feed, setPointerTrace,
+        setSeed: value => { seed = value; },
+        get seed() { return seed; },
+    };
 }

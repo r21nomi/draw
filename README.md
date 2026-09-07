@@ -37,6 +37,17 @@ The site is served under a base path, so open `http://localhost:4321/draw/`.
 `npm run build` writes a static site to `dist/`. Pushing to `main` builds and publishes
 it through GitHub Actions.
 
+## Using it as a package
+
+`public/lib/contract/` implements the host contract of `myaf2026-elililly-art-web`
+(`DrawingEngine`, `DrawingLiveView`, `DrawingPlayer`). The repository is published to
+GitHub Packages as `@r21nomi/draw` when a `v*` tag is pushed; `three` is a peer
+dependency. See the Host Contract documentation page.
+
+```
+pnpm add @r21nomi/draw three
+```
+
 ## Credits
 
 `Palette.js` and `color.js` were copied from the stroke_designer project rather than
